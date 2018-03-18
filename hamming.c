@@ -3,16 +3,16 @@
 #include <time.h>
 #include <omp.h>
 
-int hamming_distance(char ** a1,char ** a2, int m, int n, int l);
+void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
 
 int main(char argc, void* argv[])
 {
 
 
 
-	int m = 10000;
-	int n = 10000;
-	int l = 1000;
+	int m = 2;
+	int n = 3;
+	int l = 20;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -41,14 +41,20 @@ int main(char argc, void* argv[])
 			arr2[j][i] = ' ' + rand() % 94;
 	}
 
-	
-	int hamm = hamming_distance(arr1,arr2,m,n,l);
 
 
-	//printf("%s\n",*(arr1));
-	//printf("%s\n",*(arr1+1));
-	
-	printf("%d\n", hamm);
+	int distance[m*n];
+	hamming_distance(distance,arr1,arr2,m,n,l);
+
+
+	for(int h = 0; h < m; h++)
+		printf("%s\n",*(arr1+h));
+	for(int h = 0; h < m; h++)		
+		printf("%s\n",*(arr2+h));
+
+	for(int h = 0; h<m*n;h++)
+	 	printf("%d_", distance[h]);
+
 
 
 	return 0;
@@ -59,10 +65,11 @@ ret.val : calculated hamming distance
 
 **/	
 
-int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
+void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 {
 	int i,j,k = 0;
 	int count = 0;
+	int offset = -1;
  	int min,max = 0;
 
 
@@ -80,16 +87,16 @@ int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 	for(i = 0; i < min; i++)
 	{
 		for(j = 0; j < max; j++)
-		{
+		{	
+			offset++;
+			count = 0;
 			for(k = 0; k < l; k++)
 			{
 				if(a1[i][k] != a2[j][k])
 					count++;
 			}
-
+			distance[offset] = count;
 		}
 	}
 
-
-	return count;
 }
