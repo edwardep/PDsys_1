@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <time.h>
 #include <omp.h>
 
 void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
+double gettime(void);
 
 int main(char argc, void* argv[])
 {
@@ -12,7 +14,7 @@ int main(char argc, void* argv[])
 
 	int m = 2;
 	int n = 3;
-	int l = 20;
+	int l = 15;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -43,17 +45,20 @@ int main(char argc, void* argv[])
 
 
 
-	int distance[m*n];
-	hamming_distance(distance,arr1,arr2,m,n,l);
+	// int distance[m*n];
+	// double t1 = gettime();
+	// hamming_distance(distance,arr1,arr2,m,n,l);
+	// double t2 = gettime();
+	// printf("%f\n\n",(t2-t1));
 
 
 	for(int h = 0; h < m; h++)
 		printf("%s\n",*(arr1+h));
-	for(int h = 0; h < m; h++)		
+	for(int h = 0; h < n; h++)		
 		printf("%s\n",*(arr2+h));
 
-	for(int h = 0; h<m*n;h++)
-	 	printf("%d_", distance[h]);
+	// for(int h = 0; h<m*n;h++)
+	//  	printf("%d_", distance[h]);
 
 
 
@@ -99,4 +104,10 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 		}
 	}
 
+}
+double gettime(void)
+{
+	struct timeval ttime;
+	gettimeofday(&ttime , NULL);
+	return ttime.tv_sec + ttime.tv_usec * 0.000001;
 }
