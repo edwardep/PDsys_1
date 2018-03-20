@@ -7,14 +7,14 @@
 void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 
-int main(char argc, void* argv[])
+int main(int argc, char **argv)
 {
 
 
 
-	int m = 2;
-	int n = 3;
-	int l = 15;
+	int m = 100;
+	int n = 100;
+	int l = 5000;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -30,8 +30,10 @@ int main(char argc, void* argv[])
 			printf("malloc error\n");
 
 		//random generated character starting with ASCI 'space' (32-126)
+		// for(i = 0; i < l; i++)
+		// 	arr1[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
-			arr1[j][i] = ' ' + rand() % 94;
+			arr1[j][i] = '0' + rand() % 2;
 	
 	}
 	//fill second array
@@ -39,27 +41,31 @@ int main(char argc, void* argv[])
 	{
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
+		// for(i = 0; i < l; i++)
+		// 	arr2[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
-			arr2[j][i] = ' ' + rand() % 94;
+			arr2[j][i] = '0' + rand() % 2;
 	}
 
 
 
-	// int distance[m*n];
-	// double t1 = gettime();
-	// hamming_distance(distance,arr1,arr2,m,n,l);
-	// double t2 = gettime();
-	// printf("%f\n\n",(t2-t1));
+	int distance[m*n];
+	double t1 = gettime();
+	hamming_distance(distance,arr1,arr2,m,n,l);
+	double t2 = gettime();
+	printf("%f\n\n",(t2-t1));
 
 
-	for(int h = 0; h < m; h++)
-		printf("%s\n",*(arr1+h));
-	for(int h = 0; h < n; h++)		
-		printf("%s\n",*(arr2+h));
+	// for(int h = 0; h < m; h++)
+	// 	printf("%s\n",*(arr1+h));
+	// for(int h = 0; h < n; h++)		
+	// 	printf("%s\n",*(arr2+h));
 
-	// for(int h = 0; h<m*n;h++)
-	//  	printf("%d_", distance[h]);
-
+	int dist = 0;
+	for(int h = 0; h<m*n;h++)
+		dist += distance[h];
+	 
+	printf("%d_", dist);
 
 
 	return 0;
@@ -76,10 +82,11 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 	int count = 0;
 	int offset = -1;
  	int min,max = 0;
-
+ 	int small_index = 0;
 
  	if(m < n)
  	{
+ 		small_index = 1;
  		min = m;
  		max = n;
  	}
@@ -93,12 +100,21 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 	{
 		for(j = 0; j < max; j++)
 		{	
+			//printf("i,j:%d_%d\n",i,j);
 			offset++;
 			count = 0;
 			for(k = 0; k < l; k++)
 			{
-				if(a1[i][k] != a2[j][k])
-					count++;
+				if(small_index)
+				{
+					if(a1[i][k] != a2[j][k])
+						count++;
+				}
+				else
+				{
+					if(a2[i][k] != a1[j][k])
+						count++;
+				}
 			}
 			distance[offset] = count;
 		}

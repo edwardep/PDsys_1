@@ -4,21 +4,22 @@
 #include <time.h>
 #include <omp.h>
 
+#define NUM_THREADS 4
 
-#define NUM_THREADS 2
 
-int hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
 
+
+void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 
-int main(char argc, void* argv[])
+int main(int argc, char **argv)
 {
 
 
 
 	int m = 2;
-	int n = 3;
-	int l = 20;
+	int n = 2;
+	int l = 10;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -35,7 +36,7 @@ int main(char argc, void* argv[])
 
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
-			arr1[j][i] = ' ' + rand() % 94;
+			arr1[j][i] = '0' + rand() % 2;
 	
 	}
 	//fill second array
@@ -44,25 +45,30 @@ int main(char argc, void* argv[])
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
-			arr2[j][i] = ' ' + rand() % 94;
+			arr2[j][i] = '0' + rand() % 2;
 	}
 
 
 
-	// int distance[m*n];
-	// double t1 = gettime();
-	// //printf("_%d_",hamming_distance(distance,arr1,arr2,m,n,l));
-	// double t2 = gettime();
-	// printf("\n%f\n\n",(t2-t1));
+	int distance[m*n];
+	double t1 = gettime();
+	hamming_distance(distance,arr1,arr2,m,n,l);
+	double t2 = gettime();
+	printf("%f\n\n",(t2-t1));
 
 
-	for(int h = 0; h < m; h++)
-		printf("%s\n",*(arr1+h));
-	for(int h = 0; h < n; h++)		
-		printf("%s\n",*(arr2+h));
+	// for(int h = 0; h < m; h++)
+	// 	printf("%s\n",*(arr1+h));
+	// for(int h = 0; h < n; h++)		
+	// 	printf("%s\n",*(arr2+h));
 
 	// for(int h = 0; h<m*n;h++)
 	//  	printf("%d_", distance[h]);
+	int dist = 0;
+	for(int h = 0; h<m*n;h++)
+		dist += distance[h];
+	 
+	printf("%d_", dist);
 
 
 
@@ -74,18 +80,19 @@ ret.val : calculated hamming distance
 
 **/	
 
-int hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
+void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 {
-	int i,j = 0;
-	
+	int chunk=10;
+	int i,j,k = 0;
 	int offset = -1;
  	int min,max = 0;
+ 	int count=0;
+ 	int small_index = 0;
 
- 	int sum;
  	omp_set_num_threads(NUM_THREADS);
-
  	if(m < n)
  	{
+ 		small_index = 1;
  		min = m;
  		max = n;
  	}
@@ -99,36 +106,35 @@ int hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 	{
 		for(j = 0; j < max; j++)
 		{	
-
-
 			offset++;
-			printf("\n_offset: %d\n",offset);
-
-			#pragma omp parallel
+			count = 0;
+			#pragma omp parallel shared(a1,a2,i,j,offset,chunk,l) private(k)
 			{
 				
-
-				int local_nthreads = omp_get_num_threads();
-				int id = omp_get_thread_num();
-				int k;
-
-				int count = 0;
-			
-				for(k = id; k < l; k = k + local_nthreads)
-				{
-					if(a1[i][k] != a2[j][k])
-						count++;
+				#pragma omp for schedule(static,chunk) reduction(+:count) 
+				for(k = 0; k < l; k++)
+				{	
+					if(small_index)
+					{
+						if(a1[i][k] != a2[j][k])
+							count++;
+					}
+					else
+					{
+						if(a2[i][k] != a1[j][k])
+							count++;
+					}
 				}
-				#pragma omp critical
-				sum += count;
-				//printf("id: %d, sum: %d\n",id,sum);
-				//distance[offset] = count;
+
+				//printf("%d_",count);
+				distance[offset] = count;
 			}
+			//printf("\n");
+			//printf("out:%d_",count);
 		}
 	}
-	return sum;
-}
 
+}
 double gettime(void)
 {
 	struct timeval ttime;
