@@ -28,8 +28,11 @@ void* parallel_compare(void *thread_args);
  };
 
 
-
+pthread_barrier_t for_loop;
 pthread_mutex_t reduction_mx;
+
+
+//int global_dist=0;
 
 int main(int argc, char **argv)
 {
@@ -46,6 +49,7 @@ int main(int argc, char **argv)
 	//initalizing rand()
 	srand(time(NULL));
 
+	pthread_barrier_init(&for_loop,NULL,NUM_THREADS+1);
 	pthread_mutex_init(&reduction_mx,NULL);
 
 	//fill first array
@@ -96,7 +100,7 @@ int main(int argc, char **argv)
 	//printf("_%d_", dist);
 
 
-
+	pthread_exit(NULL);
 	return 0;
 }
 /**	
@@ -117,7 +121,7 @@ int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	// for(int init = 0; init < l;init++)
  	// 	str_distance[init]=0;
 
-
+ 	int cc =0;
 
 
  	//omp_set_num_threads(NUM_THREADS);
@@ -162,6 +166,9 @@ int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			 	args_array[t].tid=t;
 			 	args_array[t].small_index=small_index;
 
+
+			 	
+			 	printf("-T%d was created.\n",t);
 				rc = pthread_create(&threads[t],NULL,parallel_compare,&args_array[t]);
 				if(rc){
 					printf("ERROR; return code from pthread_create() is %d\n", rc);
@@ -172,21 +179,21 @@ int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			for(t = 0; t < NUM_THREADS; t++)
 				pthread_join(threads[t],NULL);
 
-
+			printf("_________Waiting at join.\n");
 			//printf("offset: %d\n",offset);
 			//printf("dist: %d\n",str_distance[offset]);
 
-			for(k=0;k<NUM_THREADS;k++){
-				//printf("%d_",args_array[k].distance);
-				temp += args_array[k].distance;
-			}
+			// for(k=0;k<NUM_THREADS;k++){
+			// 	//printf("%d_",args_array[k].distance);
+			// 	temp += args_array[k].distance;
+			// }
 
 			//printf("dist: %d\n",str_distance[offset]);
-
 
 
 			//printf("\n");
 			//printf("out:%d_",count);
+
 		}
 	}
 	return temp;
@@ -224,12 +231,16 @@ void* parallel_compare(void *thread_args)
 				count++;
 		}
 	}
+	
 	//pthread_barrier_wait(&for_loop);
 	pthread_mutex_lock(&reduction_mx);
 	distance+=count;
 	pthread_mutex_unlock(&reduction_mx);
 	//printf("%d_",distance);
 	data->distance=distance;
+
+	printf("_T%d has exited.\n",tid);
+	pthread_exit(NULL);
 	return 0;
 
 	//printf("%d\n", );
