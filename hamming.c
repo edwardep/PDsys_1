@@ -12,9 +12,9 @@ int main(int argc, char **argv)
 
 
 
-	int m = 100;
-	int n = 100;
-	int l = 5000;
+	int m = 2;
+	int n = 1;
+	int l = 10;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -61,11 +61,14 @@ int main(int argc, char **argv)
 	// for(int h = 0; h < n; h++)		
 	// 	printf("%s\n",*(arr2+h));
 
+	for(int h = 0; h<m*n;h++)
+	 	printf("dist: %d\n", distance[h]);
+
 	int dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("%d_", dist);
+	printf("total: %d\n", dist);
 
 
 	return 0;

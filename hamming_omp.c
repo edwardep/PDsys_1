@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
 	int m = 100;
 	int n = 100;
-	int l = 5000;
+	int l = 100000;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
