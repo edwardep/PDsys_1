@@ -12,10 +12,11 @@ int main(int argc, char **argv)
 
 
 
-	int m = 2;
-	int n = 1;
-	int l = 10;
+	int m = 100;
+	int n = 1000;
+	int l = 10000;
 	int i,j;
+
 	char * arr1[m];
 	char * arr2[n];
 
@@ -47,7 +48,7 @@ int main(int argc, char **argv)
 			arr2[j][i] = '0' + rand() % 2;
 	}
 
-
+	printf("check1");
 
 	int distance[m*n];
 	double t1 = gettime();
@@ -61,8 +62,8 @@ int main(int argc, char **argv)
 	// for(int h = 0; h < n; h++)		
 	// 	printf("%s\n",*(arr2+h));
 
-	for(int h = 0; h<m*n;h++)
-	 	printf("dist: %d\n", distance[h]);
+	// for(int h = 0; h<m*n;h++)
+	//  	printf("dist: %d\n", distance[h]);
 
 	int dist = 0;
 	for(int h = 0; h<m*n;h++)

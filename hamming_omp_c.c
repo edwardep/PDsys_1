@@ -9,7 +9,7 @@
 
 
 
-void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
+int hamming_distance( char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 
 int main(int argc, char **argv)
@@ -18,8 +18,8 @@ int main(int argc, char **argv)
 
 
 	int m = 100;
-	int n = 100;
-	int l = 100000;
+	int n = 1000;
+	int l = 10;
 	int i,j;
 	char * arr1[m];
 	char * arr2[n];
@@ -50,9 +50,9 @@ int main(int argc, char **argv)
 
 
 
-	int distance[m*n];
+	//int distance[m*n];
 	double t1 = gettime();
-	hamming_distance(distance,arr1,arr2,m,n,l);
+	printf("sum:%d\n",hamming_distance(arr1,arr2,m,n,l));
 	double t2 = gettime();
 	printf("%f\n\n",(t2-t1));
 
@@ -64,11 +64,13 @@ int main(int argc, char **argv)
 
 	// for(int h = 0; h<m*n;h++)
 	//  	printf("%d_", distance[h]);
-	int dist = 0;
-	for(int h = 0; h<m*n;h++)
-		dist += distance[h];
+	// int dist = 0;
+	// for(int h = 0; h<m*n;h++)
+	// 	dist += distance[h];
 	 
-	printf("%d_", dist);
+
+	printf("array_size%d\n", m*n);
+	
 
 
 
@@ -80,14 +82,16 @@ ret.val : calculated hamming distance
 
 **/	
 
-void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
+int hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
 	int chunk=10;
 	int i,j,k = 0;
-	int offset = -1;
  	int min,max = 0;
  	int count=0;
  	int small_index = 0;
+ 	int offset;
+ 	int sum=0;
+ 	
 
  	omp_set_num_threads(NUM_THREADS);
  	if(m < n)
@@ -102,18 +106,26 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
  		max = m;
  	}
 
-	for(i = 0; i < min; i++)
-	{
-		for(j = 0; j < max; j++)
-		{	
-			offset++;
-			count = 0;
-			#pragma omp parallel shared(a1,a2,i,j,offset,chunk,l) private(k)
-			{
-				
-				#pragma omp for schedule(static,chunk) reduction(+:count) 
+
+ 	#pragma omp parallel shared(a1,a2,chunk,l) private(i,j,count)
+ 	{
+ 		offset = -1;
+
+
+ 		#pragma omp for schedule (static,chunk) reduction(+:sum)
+		for(i = 0; i < min; i++)
+		{
+			for(j = 0; j < max; j++)
+			{	
+				offset++;
+				count = 0;
+			
+	
+				//#pragma omp parallel shared(a1,a2,i,j,offset,chunk,l) private(k)
+				//#pragma omp for schedule(static,chunk) reduction(+:count) 
 				for(k = 0; k < l; k++)
 				{	
+					
 					if(small_index)
 					{
 						if(a1[i][k] != a2[j][k])
@@ -126,14 +138,20 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 					}
 				}
 
-				//printf("%d_",count);
-				distance[offset] = count;
-			}
+				//printf("Synolo:%d,String%d,dist:%d,offset:%d\n",i,j,count,offset);
+				
+
+				sum =sum + count;
+		
 			//printf("\n");
 			//printf("out:%d_",count);
+			}
+		
 		}
+	
 	}
 
+	return sum;
 }
 double gettime(void)
 {
