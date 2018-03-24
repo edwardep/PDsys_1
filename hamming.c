@@ -4,7 +4,7 @@
 #include <time.h>
 #include <omp.h>
 
-void hamming_distance(int * distance, char ** a1,char ** a2, int m, int n, int l);
+int* hamming_distance( char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 
 int main(int argc, char **argv)
@@ -12,17 +12,21 @@ int main(int argc, char **argv)
 
 
 
+
 	int m = 100;
-	int n = 1000;
-	int l = 10000;
+	int n = 100;
+	int l = 500000;
 	int i,j;
 
-	char * arr1[m];
-	char * arr2[n];
+	char ** arr1;
+	char ** arr2;
 
 	//initalizing rand()
 	srand(time(NULL));
 
+
+	arr1=(char**)malloc(m*sizeof(char*));
+	arr2=(char**)malloc(n*sizeof(char*));
 	//fill first array
 	for(j = 0; j < m; j++)
 	{	
@@ -35,7 +39,7 @@ int main(int argc, char **argv)
 		// 	arr1[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
 			arr1[j][i] = '0' + rand() % 2;
-	
+			//arr1[j] = "0000000000";
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -46,13 +50,12 @@ int main(int argc, char **argv)
 		// 	arr2[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
 			arr2[j][i] = '0' + rand() % 2;
+			//arr2[j] = "1111111111";
 	}
 
-	printf("check1");
-
-	int distance[m*n];
+	int *distance;
 	double t1 = gettime();
-	hamming_distance(distance,arr1,arr2,m,n,l);
+	distance=hamming_distance(arr1,arr2,m,n,l);
 	double t2 = gettime();
 	printf("%f\n\n",(t2-t1));
 
@@ -65,11 +68,11 @@ int main(int argc, char **argv)
 	// for(int h = 0; h<m*n;h++)
 	//  	printf("dist: %d\n", distance[h]);
 
-	int dist = 0;
+	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("total: %d\n", dist);
+	printf("sum:: %lld\n", dist);
 
 
 	return 0;
@@ -79,14 +82,15 @@ args: 2 arrays of char pointers, sizes of arrays
 ret.val : calculated hamming distance
 
 **/	
-
-void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
+int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
 	int i,j,k = 0;
 	int count = 0;
 	int offset = -1;
  	int min,max = 0;
  	int small_index = 0;
+
+ 	int * distance=(int*)malloc(m*n*sizeof(int));
 
  	if(m < n)
  	{
@@ -123,7 +127,7 @@ void hamming_distance(int * distance,char ** a1,char ** a2, int m, int n, int l)
 			distance[offset] = count;
 		}
 	}
-
+	return distance;
 }
 double gettime(void)
 {
