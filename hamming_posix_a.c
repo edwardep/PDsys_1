@@ -4,17 +4,11 @@
 #include <time.h>
 #include <pthread.h>
 
-#define NUM_THREADS 4
-#define M 2
-#define N 2
-#define L 3
-
-
-
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 void* parallel_compare(void *thread_args);
 
+int NUM_THREADS;
 
  struct args
  {
@@ -33,9 +27,10 @@ pthread_mutex_t reduction_mx;
 
 int main(int argc, char **argv)
 {
-	int m = M;
-	int n = N;
-	int l = L;
+	int m = atoi(argv[1]);
+	int n = atoi(argv[2]);
+	int l = atoi(argv[3]);
+	NUM_THREADS = atoi(argv[4]);
 	int i,j;
 	char ** arr1;
 	char ** arr2;
@@ -90,7 +85,7 @@ int main(int argc, char **argv)
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("%lld", dist);
+	printf("sum:: %lld\n", dist);
 
 	pthread_exit(NULL);
 	return 0;
@@ -186,13 +181,14 @@ void* parallel_compare(void *thread_args)
 	int start,stop;
 	int chunk = l/NUM_THREADS;
 	start = tid*chunk;
+	
 	if(tid != (NUM_THREADS-1))
-		stop = start + chunk;
+		stop =(tid+1)*chunk;
 	else
 		stop = l;
 
 
-	for(k = start+1; k < stop; k++)
+	for(k = start; k < stop; k++)
 	{
 		if(small_index)
 		{

@@ -10,12 +10,9 @@ double gettime(void);
 int main(int argc, char **argv)
 {
 
-
-
-
-	int m = 100;
-	int n = 100;
-	int l = 500000;
+	int m = atoi(argv[1]);
+	int n = atoi(argv[2]);
+	int l = atoi(argv[3]);
 	int i,j;
 
 	char ** arr1;
@@ -38,8 +35,9 @@ int main(int argc, char **argv)
 		// for(i = 0; i < l; i++)
 		// 	arr1[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
+			//arr1[j] = "00";
 			arr1[j][i] = '0' + rand() % 2;
-			//arr1[j] = "0000000000";
+			
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -49,8 +47,9 @@ int main(int argc, char **argv)
 		// for(i = 0; i < l; i++)
 		// 	arr2[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
+			//arr2[j] = "11";
 			arr2[j][i] = '0' + rand() % 2;
-			//arr2[j] = "1111111111";
+			
 	}
 
 	int *distance;

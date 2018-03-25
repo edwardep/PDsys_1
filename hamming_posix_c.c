@@ -9,17 +9,19 @@ double gettime(void);
 void* parallel_compare(void *thread_args);
 
 int NUM_THREADS;
-
  struct args
  {
  	char ** array1;
  	char ** array2;
- 	int i,l;
+ 	int l;
+ 	int min;
  	int max;
+ 	int offset;
  	int tid;
  	int small_index;
  };
 
+int OFFSET = -1;
 pthread_mutex_t reduction_mx;
 
 
@@ -102,8 +104,7 @@ ret.val : calculated hamming distance
 
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
-	int i = 0;
-	//int offset;
+	int offset;
  	int min,max = 0;
  	int small_index = 0;
 
@@ -124,10 +125,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	}
 
 
- 	//offset = -1;
-	for(i = 0; i < min; i++)
-	{	
-
+ 		offset = -1;
 		struct args * args_array;
 		args_array = (struct args*)malloc(NUM_THREADS*sizeof(struct args));
 		pthread_t threads[NUM_THREADS];
@@ -137,9 +135,10 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 		{
 			args_array[t].array1 = a1;
 			args_array[t].array2 = a2;
-			args_array[t].i = i;
-			args_array[t].l = l;
+			args_array[t].min = min;
 			args_array[t].max = max;
+			args_array[t].l = l;
+			args_array[t].offset = -1;
 			args_array[t].tid = t;
 			args_array[t].small_index = small_index;
 			
@@ -162,17 +161,18 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 				exit(-1);
 			}
 			
-			for(int w = 0; w < max; w++){
-				//printf("__________i*max+w = %d, tid:%d\n",i*max+w,t);
-				distance[i*max + w] += retval[w];
+			for(int w = 0; w < m*n; w++)
+			{
+				//printf("retval[%d]:%d\n",w,retval[w]);
+				distance[w] += retval[w];
 			}
+
 			free(retval);
 		}
 
 		//for(int g = 0; g < max; g++)printf("retval[%d]: %d\n",g,retval[g]);
 
-		free(args_array);	
-	}
+		free(args_array);
 	return distance;
 }
 
@@ -185,59 +185,63 @@ void* parallel_compare(void *thread_args)
 	data = (struct args*)thread_args;
 	char ** a1 = data->array1;
 	char ** a2 = data->array2;
-	int i = data->i;
+	int min = data->min;
 	int l = data->l;
+	int tmp_off = data->offset;
 	int max = data->max;
 	int tid = data->tid;
 	int small_index=data->small_index;
 
 	int * distance = (int*)malloc(max*sizeof(int));
 
+	//int offset;
 	int count;
-	int j,k;
+	int i,j,k;
 	int start,stop;
-	int chunk = max/NUM_THREADS;
-	start=tid*chunk;
-
-
+	int chunk = min/NUM_THREADS;
+	//printf("chunk:%d",chunk);
+	start = tid*chunk;
 	if(tid != (NUM_THREADS-1))
 		stop =(tid+1)*chunk;
 	else
-		stop =  max;
+		stop =  min;
 
-
-	for(j = start; j < stop; j++)
+	for(i = start; i < stop; i++)
 	{
-		count=0;
-
-		for(k = 0; k < l; k++)
+		for(j = 0; j < max; j++)
 		{
-			if(small_index)
+			count=0;
+
+			for(k = 0; k < l; k++)
 			{
-				if(a1[i][k] != a2[j][k])
-					count++;
+				if(small_index)
+				{
+					if(a1[i][k] != a2[j][k])
+						count++;
+				}
+				else
+				{
+					if(a2[i][k] != a1[j][k])
+						count++;
+				}
 			}
-			else
-			{
-				if(a2[i][k] != a1[j][k])
-					count++;
-			}
+			//printf("cunt: %d\n",count);
+			pthread_mutex_lock(&reduction_mx);
+			OFFSET++;
+			distance[OFFSET] = count;
+			pthread_mutex_unlock(&reduction_mx);
 		}
-		//printf("j:%d\n",j);
-		pthread_mutex_lock(&reduction_mx);
-		distance[j] = count;
-		pthread_mutex_unlock(&reduction_mx);
 	}
 
 	
 	//printf("Thread %d returns ",tid);
 	
-	// for(j=0;j<max;j++)
-	// 	printf("%d__",distance[j]);
+	// for(j=0;j<M*N;j++)
+	// 	printf("%d_",distance[j]);
 	// printf("\n");
 
 
-	int *answer = (int*)malloc(max*sizeof(int));
+	int *answer = (int*)malloc(min*max*sizeof(int));
 	answer = distance;
 	pthread_exit(answer);
 	return 0;

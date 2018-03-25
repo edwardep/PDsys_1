@@ -4,23 +4,18 @@
 #include <time.h>
 #include <omp.h>
 
-#define NUM_THREADS 4
-
-
-
 
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l);
 double gettime(void);
 
+int NUM_THREADS;
 int main(int argc, char **argv)
 {
 
-
-
-
-	int m = 1000;
-	int n = 10000;
-	int l = 100;
+	int m = atoi(argv[1]);
+	int n = atoi(argv[2]);
+	int l = atoi(argv[3]);
+	NUM_THREADS = atoi(argv[4]);
 	int i,j;
 	char ** arr1;
 	char ** arr2;
@@ -69,7 +64,7 @@ int main(int argc, char **argv)
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("sum:%ld", dist);
+	printf("sum:: %lld\n", dist);
 	
 
 
