@@ -145,7 +145,11 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			//	  free memory
 			int * retval;
 			for(t = 0; t < NUM_THREADS; t++){
-				pthread_join(threads[t],(void**)&retval);
+				rc = pthread_join(threads[t],(void**)&retval);
+				if(rc){
+					printf("ERROR; return code from pthread_join() is %d\n", rc);
+					exit(-1);
+				}
 				distance[offset] += *retval;
 				free(retval);
 			}
@@ -162,7 +166,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 **/
 void* parallel_compare(void *thread_args)
 {
-	//Declare local struct and retrieve arguments
+	//Declaring local struct and retrieving arguments
 	struct args * data;
 	data = (struct args*)malloc(sizeof(struct args));
 	data = (struct args*)thread_args;
@@ -180,7 +184,7 @@ void* parallel_compare(void *thread_args)
 	int distance = 0;
 	int k;
 
-	//setting up loop workshare
+	//setting up workshare loop
 	int start,stop;
 	int chunk = l/NUM_THREADS;
 	start = tid*chunk;

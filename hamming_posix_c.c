@@ -24,41 +24,29 @@ int NUM_THREADS;
 int OFFSET = -1;
 pthread_mutex_t reduction_mx;
 
-
-//int global_dist=0;
-
 int main(int argc, char **argv)
 {
 	int m = atoi(argv[1]);
 	int n = atoi(argv[2]);
 	int l = atoi(argv[3]);
 	NUM_THREADS = atoi(argv[4]);
-	int i,j;
-	char ** arr1;
-	char ** arr2;
 
 	//initalizing rand()
 	srand(time(NULL)+atoi(argv[5])+7);
 
-	arr1=(char**)malloc(m*sizeof(char*));
-	arr2=(char**)malloc(n*sizeof(char*));
+	char ** arr1 = (char**)malloc(m*sizeof(char*));
+	char ** arr2 = (char**)malloc(n*sizeof(char*));
 
-	pthread_mutex_init(&reduction_mx,NULL);
+	int i,j;
 
 	//fill first array
 	for(j = 0; j < m; j++)
 	{	
-
 		if((arr1[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
-
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
-			arr1[j][i] = ' ' + rand() % 94;
-		//second implementation of generating character with 0,1
-		// for(i = 0; i < l; i++)
-		// 	arr1[j][i] = '0' + rand() % 2;
-			
+			arr1[j][i] = ' ' + rand() % 94;	
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -67,11 +55,8 @@ int main(int argc, char **argv)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
 			arr2[j][i] = ' ' + rand() % 94;
-		// for(i = 0; i < l; i++)
-		// 	arr2[j][i] = '0' + rand() % 2;
-			
 	}
-
+	pthread_mutex_init(&reduction_mx,NULL);
 
 	//Printing total time and distance
 	printf("\n----- Hamming POSIX coarse");
@@ -96,7 +81,6 @@ args: 2 arrays of char pointers, sizes of arrays
 ret.val : calculated hamming distance
 
 **/	
-
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
 	int offset;
@@ -106,7 +90,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 
  	int * distance=(int*)malloc(m*n*sizeof(int));
 
-
+ 	//Setting the correct array limits
  	if(m < n)
  	{
  		small_index = 1;
@@ -119,13 +103,17 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  		max = m;
  	}
 
-
- 		offset = -1;
+ 	//PARALLEL SECTION begins
+ 		//Allocate memory for "arguments structure"
 		struct args * args_array;
 		args_array = (struct args*)malloc(NUM_THREADS*sizeof(struct args));
+
 		pthread_t threads[NUM_THREADS];
 
 		int t,rc;
+		//For each thread:
+		//	  pass arguments to struct
+		//	  call pthread_create(thread_id,null,thread_task,arguments_struct)
 		for(t = 0; t < NUM_THREADS; t++)
 		{
 			args_array[t].array1 = a1;
@@ -146,33 +134,33 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			}	
 		}	
 		int * retval;
-
+		//For each thread:
+		//	  call pthread_join(thread_id,return_value)
+		//	  add partial count to distance array
+		//	  free memory
 		for(t = 0; t < NUM_THREADS; t++)
 		{
 			rc = pthread_join(threads[t],(void**)&retval);
-			//printf("waiting here.__________________________\n");
 			if(rc){
 				printf("ERROR; return code from pthread_join() is %d\n", rc);
 				exit(-1);
 			}
-			
 			for(int w = 0; w < m*n; w++)
-			{
-				//printf("retval[%d]:%d\n",w,retval[w]);
 				distance[w] += retval[w];
-			}
 
 			free(retval);
 		}
-
-		//for(int g = 0; g < max; g++)printf("retval[%d]: %d\n",g,retval[g]);
-
 		free(args_array);
+	//PARALLEL SECTION ends
 	return distance;
 }
-
+/**
+	A thread's task.
+	Passed argument is a struct of arguments
+**/
 void* parallel_compare(void *thread_args)
 {
+	//Declaring local struct and retrieving arguments
 	struct args * data;
 	data = (struct args*)malloc(sizeof(struct args));
 
@@ -187,28 +175,29 @@ void* parallel_compare(void *thread_args)
 	int tid = data->tid;
 	int small_index=data->small_index;
 
+	//declaring & init local variables
 	int * distance = (int*)malloc(max*min*sizeof(int));
-	int g;
-	for(g = 0; g < min*max; g++) distance[g] = 0;
+	int g; for(g = 0; g < min*max; g++) distance[g] = 0;
 
-	//int offset;
 	int count;
 	int i,j,k;
+
+	//setting up workshare loop 
 	int start,stop;
 	int chunk = min/NUM_THREADS;
-	//printf("chunk:%d",chunk);
 	start = tid*chunk;
 	if(tid != (NUM_THREADS-1))
 		stop =(tid+1)*chunk;
 	else
 		stop =  min;
 
+	//Iterating through arrays A and B
 	for(i = start; i < stop; i++)
 	{
 		for(j = 0; j < max; j++)
 		{
 			count=0;
-
+			//Comparing strings
 			for(k = 0; k < l; k++)
 			{
 				if(small_index)
@@ -222,22 +211,14 @@ void* parallel_compare(void *thread_args)
 						count++;
 				}
 			}
-			//printf("cunt: %d\n",count);
+			//Mutex lock before changing value of shared memory variable
 			pthread_mutex_lock(&reduction_mx);
 			OFFSET++;
 			distance[OFFSET] = count;
 			pthread_mutex_unlock(&reduction_mx);
 		}
 	}
-
-	
-	//printf("Thread %d returns ",tid);
-	
-	// for(j=0;j<M*N;j++)
-	// 	printf("%d_",distance[j]);
-	// printf("\n");
-
-
+	//passing result to pthread_exit()
 	int *answer = (int*)malloc(min*max*sizeof(int));
 	answer = distance;
 	pthread_exit(answer);
