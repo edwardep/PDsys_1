@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	char ** arr2;
 
 	//initalizing rand()
-	srand(time(NULL));
+	srand(time(NULL)+atoi(argv[5])+7);
 
 	arr1=(char**)malloc(m*sizeof(char*));
 	arr2=(char**)malloc(n*sizeof(char*));
@@ -54,10 +54,11 @@ int main(int argc, char **argv)
 
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
-			//arr1[j][i] = '0';
-			arr1[j][i] = '0' + rand() % 2;
-			//arr1[j] = "00";
-	
+			arr1[j][i] = ' ' + rand() % 94;
+		//second implementation of generating character with 0,1
+		// for(i = 0; i < l; i++)
+		// 	arr1[j][i] = '0' + rand() % 2;
+			
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -65,33 +66,27 @@ int main(int argc, char **argv)
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
-			//arr2[j][i] = '1';
-			arr2[j][i] = '0' + rand() % 2;
+			arr2[j][i] = ' ' + rand() % 94;
+		// for(i = 0; i < l; i++)
+		// 	arr2[j][i] = '0' + rand() % 2;
 			
 	}
 
 
+	//Printing total time and distance
+	printf("\n----- Hamming POSIX coarse");
 	int *distance;
 	double t1 = gettime();
-	distance=hamming_distance(arr1,arr2,m,n,l);
+	distance = hamming_distance(arr1,arr2,m,n,l);
 	double t2 = gettime();
-	printf("time:%f\n\n",(t2-t1));
+	printf("\ntime:    %f\n",(t2-t1));
 
-
-	// for(int h = 0; h < m; h++)
-	// 	printf("%s\n",*(arr1+h));
-	// for(int h = 0; h < n; h++)		
-	// 	printf("%s\n",*(arr2+h));
-
-	// for(int h = 0; h<m*n;h++)
-	//  	printf("dist: %d\n", distance[h]);
-	
 
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("sum:: %lld\n", dist);
+	printf("hamming: %lld\n", dist);
 
 	pthread_exit(NULL);
 	return 0;
@@ -192,7 +187,9 @@ void* parallel_compare(void *thread_args)
 	int tid = data->tid;
 	int small_index=data->small_index;
 
-	int * distance = (int*)malloc(max*sizeof(int));
+	int * distance = (int*)malloc(max*min*sizeof(int));
+	int g;
+	for(g = 0; g < min*max; g++) distance[g] = 0;
 
 	//int offset;
 	int count;

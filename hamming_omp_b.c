@@ -16,62 +16,49 @@ int main(int argc, char **argv)
 	int n = atoi(argv[2]);
 	int l = atoi(argv[3]);
 	NUM_THREADS = atoi(argv[4]);
-	int i,j;
-	char ** arr1;
-	char ** arr2;
 
 	//initalizing rand()
-	srand(time(NULL));
+	srand(time(NULL)+atoi(argv[5])+3);
 
-	arr1=(char**)malloc(m*sizeof(char*));
-	arr2=(char**)malloc(n*sizeof(char*));
+	
+	char ** arr1 = (char**)malloc(m*sizeof(char*));
+	char ** arr2 = (char**)malloc(n*sizeof(char*));
+
+	int i,j;
+
 	//fill first array
 	for(j = 0; j < m; j++)
 	{	
-
 		if((arr1[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
-
 		//random generated character starting with ASCI 'space' (32-126)
-		// for(i = 0; i < l; i++)
-		// 	arr1[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
-			arr1[j][i] = '0' + rand() % 2;
-			//arr1[j] = "0000000000";
+			arr1[j][i] = ' ' + rand() % 94;		
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
 	{
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
-		// for(i = 0; i < l; i++)
-		// 	arr2[j][i] = ' ' + rand() % 94;
 		for(i = 0; i < l; i++)
-			arr2[j][i] = '0' + rand() % 2;
-			//arr2[j] = "1111111111";
+			arr2[j][i] = ' ' + rand() % 94;		
 	}
 
 
-
-	int* distance;
+	//Printing total time and distance
+	printf("\n----- Hamming OMP multi");
+	int *distance;
 	double t1 = gettime();
 	distance = hamming_distance(arr1,arr2,m,n,l);
 	double t2 = gettime();
-	printf("time:%f\n\n",(t2-t1));
+	printf("\ntime:    %f\n",(t2-t1));
 
 
-	// for(int h = 0; h < m; h++)
-	// 	printf("%s\n",*(arr1+h));
-	// for(int h = 0; h < n; h++)		
-	// 	printf("%s\n",*(arr2+h));
-
-	// for(int h = 0; h<m*n;h++)
-	//  	printf("%d_", distance[h]);
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("sum: %lld\n", dist);
+	printf("hamming: %lld\n", dist);
 	
 
 
@@ -93,8 +80,9 @@ int * hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	
 	int *distance=(int*)malloc(m*n*sizeof(int));
 	
-
  	omp_set_num_threads(NUM_THREADS);
+
+ 	//Setting the correct array limits
  	if(m < n)
  	{
  		small_index = 1;
@@ -113,11 +101,13 @@ int * hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 		{
 		#pragma omp parallel
  		{
+ 			//private memory declarations
  			int k,count;
 
 			#pragma omp for
 			for(j = 0; j < max; j++)
 			{	
+				//Comparing strings 
 				count = 0;
 				for(k = 0; k < l; k++)
 				{	
@@ -132,23 +122,15 @@ int * hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 						if(a2[i][k] != a1[j][k])
 							count++;
 					}
-
-				//printf("_____________count: %d\n",count);
 				}
-
-				//printf("Synolo:%d,String%d,dist:%d,offset:%d\n",i,j,count,offset);
-
+				//Mutex lock before changing value of shared memory variable
 				#pragma omp critical
 				distance[++offset] = count;
-		
-			//printf("\n");
-			//printf("out:%d_",count);
 			}
-		
+			//barrier is implied at this point (end of #pragma for) 
 		}
-	
+		//end of #pragma omp parallel
 	}
-
 	return distance;
 }
 double gettime(void)

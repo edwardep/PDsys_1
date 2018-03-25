@@ -22,38 +22,29 @@ int NUM_THREADS;
 
 pthread_mutex_t reduction_mx;
 
-
-//int global_dist=0;
-
 int main(int argc, char **argv)
 {
 	int m = atoi(argv[1]);
 	int n = atoi(argv[2]);
 	int l = atoi(argv[3]);
 	NUM_THREADS = atoi(argv[4]);
-	int i,j;
-	char ** arr1;
-	char ** arr2;
 
 	//initalizing rand()
-	srand(time(NULL));
+	srand(time(NULL)+atoi(argv[5])+5);
 
-	arr1=(char**)malloc(m*sizeof(char*));
-	arr2=(char**)malloc(n*sizeof(char*));
+	char ** arr1 = (char**)malloc(m*sizeof(char*));
+	char ** arr2 = (char**)malloc(n*sizeof(char*));
 
-	pthread_mutex_init(&reduction_mx,NULL);
+	int i,j;
 
 	//fill first array
 	for(j = 0; j < m; j++)
 	{	
-
 		if((arr1[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
-
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
-			arr1[j][i] = '0' + rand() % 2;
-	
+			arr1[j][i] = ' ' + rand() % 94;	
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -61,31 +52,25 @@ int main(int argc, char **argv)
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
-			arr2[j][i] = '0' + rand() % 2;
+			arr2[j][i] = ' ' + rand() % 94;
 	}
 
+	pthread_mutex_init(&reduction_mx,NULL);
 
+	//Printing total time and distance
+	printf("\n----- Hamming POSIX fine");
 	int *distance;
 	double t1 = gettime();
-	distance=hamming_distance(arr1,arr2,m,n,l);
+	distance = hamming_distance(arr1,arr2,m,n,l);
 	double t2 = gettime();
-	printf("time:%f\n\n",(t2-t1));
+	printf("\ntime:    %f\n",(t2-t1));
 
-
-	// for(int h = 0; h < m; h++)
-	// 	printf("%s\n",*(arr1+h));
-	// for(int h = 0; h < n; h++)		
-	// 	printf("%s\n",*(arr2+h));
-
-	// for(int h = 0; h<m*n;h++)
-	//  	printf("dist: %d\n", dist[h]);
-	
 
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("sum:: %lld\n", dist);
+	printf("hamming: %lld\n", dist);
 
 	pthread_exit(NULL);
 	return 0;
@@ -95,7 +80,6 @@ args: 2 arrays of char pointers, sizes of arrays
 ret.val : calculated hamming distance
 
 **/	
-
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
 	int i,j,k = 0;
@@ -106,6 +90,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 
  	int * distance=(int*)malloc(m*n*sizeof(int));
 
+ 	//Setting the correct array limits
  	if(m < n)
  	{
  		small_index = 1;
@@ -118,17 +103,25 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  		max = m;
  	}
 
+ 	//Iterating through Arrays A and B
 	for(i = 0; i < min; i++)
 	{
 		for(j = 0; j < max; j++)
 		{	
 			offset++;
+		//PARALLEL SECTION begins
+			//Allocate memory for "arguments structure"
 			struct args * args_array;
 			args_array = (struct args*)malloc(NUM_THREADS*sizeof(struct args));
+
 
 			pthread_t threads[NUM_THREADS];
 
 			int t,rc;
+
+			//For each thread:
+			//	  pass arguments to struct
+			//	  call pthread_create(thread_id,null,thread_task,arguments_struct)
 			for(t = 0; t < NUM_THREADS; t++){
 
 				args_array[t].array1 = a1;
@@ -146,7 +139,10 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 					exit(-1);
 				}
 			}
-
+			//For each thread:
+			//	  call pthread_join(thread_id,return_value)
+			//	  add partial count to distance array
+			//	  free memory
 			int * retval;
 			for(t = 0; t < NUM_THREADS; t++){
 				pthread_join(threads[t],(void**)&retval);
@@ -154,18 +150,23 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 				free(retval);
 			}
 			free(args_array);
+		//PARALLEL SECTION ends
 		}
 	}
 	return distance;
 }
 
+/**
+	A thread's task.
+	Passed argument is a struct of arguments
+**/
 void* parallel_compare(void *thread_args)
 {
+	//Declare local struct and retrieve arguments
 	struct args * data;
 	data = (struct args*)malloc(sizeof(struct args));
-
-
 	data = (struct args*)thread_args;
+
 	char ** a1 = data->array1;
 	char ** a2 = data->array2;
 	int i = data->i;
@@ -175,9 +176,11 @@ void* parallel_compare(void *thread_args)
 	int tid = data->tid;
 	int small_index=data->small_index;
 
-
+	//declaring local variables
 	int distance = 0;
 	int k;
+
+	//setting up loop workshare
 	int start,stop;
 	int chunk = l/NUM_THREADS;
 	start = tid*chunk;
@@ -187,7 +190,7 @@ void* parallel_compare(void *thread_args)
 	else
 		stop = l;
 
-
+	//Comparing strings
 	for(k = start; k < stop; k++)
 	{
 		if(small_index)
@@ -201,12 +204,12 @@ void* parallel_compare(void *thread_args)
 				count++;
 		}
 	}
-
-
+	//Mutex lock before changing value of shared memory variable
 	pthread_mutex_lock(&reduction_mx);
 	distance += count;
 	pthread_mutex_unlock(&reduction_mx);
 
+	//passing result to pthread_exit()
 	int *answer = (int*)malloc(sizeof(*answer));
 	*answer = distance;
 	pthread_exit(answer);

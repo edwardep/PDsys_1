@@ -9,21 +9,18 @@ double gettime(void);
 void* parallel_compare(void *thread_args);
 
 int NUM_THREADS;
-
+int OFFSET = -1;
  struct args
  {
  	char ** array1;
  	char ** array2;
  	int i,l;
- 	int max;
+ 	int min,max;
  	int tid;
  	int small_index;
  };
 
 pthread_mutex_t reduction_mx;
-
-
-//int global_dist=0;
 
 int main(int argc, char **argv)
 {
@@ -36,7 +33,7 @@ int main(int argc, char **argv)
 	char ** arr2;
 
 	//initalizing rand()
-	srand(time(NULL));
+	srand(time(NULL)+atoi(argv[5])+6);
 
 	arr1=(char**)malloc(m*sizeof(char*));
 	arr2=(char**)malloc(n*sizeof(char*));
@@ -52,10 +49,11 @@ int main(int argc, char **argv)
 
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
-			//arr1[j][i] = '0';
-			arr1[j][i] = '0' + rand() % 2;
-			//arr1[j] = "00";
-	
+			arr1[j][i] = ' ' + rand() % 94;
+		//second implementation of generating character with 0,1
+		// for(i = 0; i < l; i++)
+		// 	arr1[j][i] = '0' + rand() % 2;
+			
 	}
 	//fill second array
 	for(j = 0; j < n; j++)
@@ -63,33 +61,27 @@ int main(int argc, char **argv)
 		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
-			//arr2[j][i] = '1';
-			arr2[j][i] = '0' + rand() % 2;
+			arr2[j][i] = ' ' + rand() % 94;
+		// for(i = 0; i < l; i++)
+		// 	arr2[j][i] = '0' + rand() % 2;
 			
 	}
 
 
+	//Printing total time and distance
+	printf("\n----- Hamming POSIX multi");
 	int *distance;
 	double t1 = gettime();
-	distance=hamming_distance(arr1,arr2,m,n,l);
+	distance = hamming_distance(arr1,arr2,m,n,l);
 	double t2 = gettime();
-	printf("time:%f\n\n",(t2-t1));
+	printf("\ntime:    %f\n",(t2-t1));
 
-
-	// for(int h = 0; h < m; h++)
-	// 	printf("%s\n",*(arr1+h));
-	// for(int h = 0; h < n; h++)		
-	// 	printf("%s\n",*(arr2+h));
-
-	// for(int h = 0; h<m*n;h++)
-	//  	printf("dist: %d\n", distance[h]);
-	
 
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 		dist += distance[h];
 	 
-	printf("sum:: %lld\n", dist);
+	printf("hamming: %lld\n", dist);
 
 	pthread_exit(NULL);
 	return 0;
@@ -139,6 +131,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			args_array[t].array2 = a2;
 			args_array[t].i = i;
 			args_array[t].l = l;
+			args_array[t].min = min;
 			args_array[t].max = max;
 			args_array[t].tid = t;
 			args_array[t].small_index = small_index;
@@ -162,9 +155,9 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 				exit(-1);
 			}
 			
-			for(int w = 0; w < max; w++){
+			for(int w = 0; w < max*min; w++){
 				//printf("__________i*max+w = %d, tid:%d\n",i*max+w,t);
-				distance[i*max + w] += retval[w];
+				distance[w] += retval[w];
 			}
 			free(retval);
 		}
@@ -187,11 +180,14 @@ void* parallel_compare(void *thread_args)
 	char ** a2 = data->array2;
 	int i = data->i;
 	int l = data->l;
+	int min = data->min;
 	int max = data->max;
 	int tid = data->tid;
 	int small_index=data->small_index;
 
-	int * distance = (int*)malloc(max*sizeof(int));
+	int * distance = (int*)malloc(max*min*sizeof(int));
+	int g;
+	for(g = 0; g < min*max; g++) distance[g] = 0;
 
 	int count;
 	int j,k;
@@ -225,7 +221,8 @@ void* parallel_compare(void *thread_args)
 		}
 		//printf("j:%d\n",j);
 		pthread_mutex_lock(&reduction_mx);
-		distance[j] = count;
+		OFFSET++;
+		distance[OFFSET] = count;
 		pthread_mutex_unlock(&reduction_mx);
 	}
 
@@ -237,7 +234,7 @@ void* parallel_compare(void *thread_args)
 	// printf("\n");
 
 
-	int *answer = (int*)malloc(max*sizeof(int));
+	int *answer = (int*)malloc(max*min*sizeof(int));
 	answer = distance;
 	pthread_exit(answer);
 	return 0;
