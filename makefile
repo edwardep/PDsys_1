@@ -1,7 +1,7 @@
 all:
 	@echo "\nCompiling files, please wait..."
 	@echo "________________________"
-	@$(MAKE) hamm_seq hamm_omp_a hamm_omp_b hamm_omp_c hamm_pt_a hamm_pt_b hamm_pt_c
+	@$(MAKE) hamm_seq hamm_omp_a hamm_omp_b hamm_omp_c hamm_pt_b hamm_pt_c
 	@echo "________________________"
 	@echo "\nExecuting all cases..."
 	@./hamm_seq $(M) $(N) $(L) $(S)

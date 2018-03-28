@@ -18,15 +18,15 @@ int main(int argc, char **argv)
 	srand(time(NULL)*atoi(argv[4])+1);
 
 
-	char ** arr1 = (char**)malloc(m*sizeof(char*));
-	char ** arr2 = (char**)malloc(n*sizeof(char*));
+	char ** arr1 = (char**)malloc(m*sizeof(*arr1));
+	char ** arr2 = (char**)malloc(n*sizeof(*arr2));
 
 	int i,j;
 
 	//filling first array
 	for(j = 0; j < m; j++)
 	{	
-		if((arr1[j] = (char *)malloc(l * sizeof (char))) == NULL)
+		if((arr1[j] = (char *)malloc(l * sizeof(char))) == NULL)
 			printf("malloc error\n");
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	//filling second array
 	for(j = 0; j < n; j++)
 	{
-		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
+		if((arr2[j] = (char *)malloc(l * sizeof(char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
 			arr2[j][i] = ' ' + rand() % 94;		
@@ -51,12 +51,25 @@ int main(int argc, char **argv)
 
 
 	long long dist = 0;
-	for(int h = 0; h<m*n;h++)
-		dist += distance[h];
+	 for(int h = 0; h<m*n;h++)
+	 	dist += distance[h];
 	 
 	printf("hamming: %lld\n", dist);
 
 
+	//Memory freeing
+	for(j = 0; j < m; j++){
+		free(arr1[j]);
+		arr1[j]=NULL;
+	}	
+
+	for(j = 0; j < n; j++){
+		free(arr2[j]);
+		arr2[j]=NULL;
+	}
+	free(arr1);
+	free(arr2);	
+	free(distance);
 	return 0;
 }
 /**	
@@ -72,7 +85,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	int min,max = 0;
  	int small_index = 0;
 
- 	int * distance=(int*)malloc(m*n*sizeof(int));
+ 	int * distance = (int*)malloc(m*n*sizeof(int));
 
 
  	//Setting the correct array limits

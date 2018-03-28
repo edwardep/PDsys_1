@@ -32,15 +32,15 @@ int main(int argc, char **argv)
 	//initalizing rand()
 	srand(time(NULL)+atoi(argv[5])+5);
 
-	char ** arr1 = (char**)malloc(m*sizeof(char*));
-	char ** arr2 = (char**)malloc(n*sizeof(char*));
+	char ** arr1 = (char**)malloc(m*sizeof(*arr1));
+	char ** arr2 = (char**)malloc(n*sizeof(*arr2));
 
 	int i,j;
 
 	//fill first array
 	for(j = 0; j < m; j++)
 	{	
-		if((arr1[j] = (char *)malloc(l * sizeof (char))) == NULL)
+		if((arr1[j] = (char *)malloc(l * sizeof(char))) == NULL)
 			printf("malloc error\n");
 		//random generated character starting with ASCI 'space' (32-126)
 		for(i = 0; i < l; i++)
@@ -49,13 +49,11 @@ int main(int argc, char **argv)
 	//fill second array
 	for(j = 0; j < n; j++)
 	{
-		if((arr2[j] = (char *)malloc(l * sizeof (char))) == NULL)
+		if((arr2[j] = (char *)malloc(l * sizeof(char))) == NULL)
 			printf("malloc error\n");
 		for(i = 0; i < l; i++)
 			arr2[j][i] = ' ' + rand() % 94;
 	}
-
-	pthread_mutex_init(&reduction_mx,NULL);
 
 	//Printing total time and distance
 	printf("\n----- Hamming POSIX fine");
@@ -68,12 +66,28 @@ int main(int argc, char **argv)
 
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
+	{
+		printf("dist:%d\n",distance[h]);
 		dist += distance[h];
+	}
 	 
 	printf("hamming: %lld\n", dist);
 
+	//Memory freeing
+	for(j = 0; j < m; j++){
+		free(arr1[j]);
+		arr1[j]=NULL;
+	}	
+
+	for(j = 0; j < n; j++){
+		free(arr2[j]);
+		arr2[j]=NULL;
+	}
+	free(arr1);
+	free(arr2);	
+	free(distance);
+	printf("main thread exit");
 	pthread_exit(NULL);
-	return 0;
 }
 /**	
 args: 2 arrays of char pointers, sizes of arrays
@@ -82,13 +96,14 @@ ret.val : calculated hamming distance
 **/	
 int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 {
-	int i,j,k = 0;
+	int i,j = 0;
 	int offset = -1;
  	int min,max = 0;
  	int small_index = 0;
 
 
  	int * distance=(int*)malloc(m*n*sizeof(int));
+ 	for(int g=0;g<m*n;g++)distance[g]=0;
 
  	//Setting the correct array limits
  	if(m < n)
@@ -111,10 +126,9 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			offset++;
 		//PARALLEL SECTION begins
 			//Allocate memory for "arguments structure"
-			struct args * args_array;
-			args_array = (struct args*)malloc(NUM_THREADS*sizeof(struct args));
+			struct args * args_array = (struct args*)malloc(NUM_THREADS * sizeof(*args_array));
 
-
+			pthread_mutex_init(&reduction_mx,NULL);
 			pthread_t threads[NUM_THREADS];
 
 			int t,rc;
@@ -122,8 +136,8 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			//For each thread:
 			//	  pass arguments to struct
 			//	  call pthread_create(thread_id,null,thread_task,arguments_struct)
-			for(t = 0; t < NUM_THREADS; t++){
-
+			for(t = 0; t < NUM_THREADS; t++)
+			{
 				args_array[t].array1 = a1;
 			 	args_array[t].array2 = a2;
 			 	args_array[t].i = i;
@@ -143,20 +157,28 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			//	  call pthread_join(thread_id,return_value)
 			//	  add partial count to distance array
 			//	  free memory
-			int * retval;
-			for(t = 0; t < NUM_THREADS; t++){
+			
+			for(t = 0; t < NUM_THREADS; t++)
+			{	
+				int * retval;
+				//printf("in loop[%d][%d], waiting for T%d\n",i,j,t);
 				rc = pthread_join(threads[t],(void**)&retval);
 				if(rc){
 					printf("ERROR; return code from pthread_join() is %d\n", rc);
 					exit(-1);
 				}
+				//printf("after T%d\n",t);
 				distance[offset] += *retval;
 				free(retval);
+				//retval = NULL;
 			}
 			free(args_array);
+			pthread_mutex_destroy(&reduction_mx);
 		//PARALLEL SECTION ends
 		}
 	}
+
+	//printf("!!!exit hamming!!!!");
 	return distance;
 }
 
@@ -167,8 +189,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 void* parallel_compare(void *thread_args)
 {
 	//Declaring local struct and retrieving arguments
-	struct args * data;
-	data = (struct args*)malloc(sizeof(struct args));
+	struct args *data;
 	data = (struct args*)thread_args;
 
 	char ** a1 = data->array1;
@@ -216,8 +237,8 @@ void* parallel_compare(void *thread_args)
 	//passing result to pthread_exit()
 	int *answer = (int*)malloc(sizeof(*answer));
 	*answer = distance;
+	//printf("%d\n", );
 	pthread_exit(answer);
-	return 0;
 }
 double gettime(void)
 {

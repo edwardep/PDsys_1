@@ -74,7 +74,6 @@ int main(int argc, char **argv)
 	printf("hamming: %lld\n", dist);
 
 	pthread_exit(NULL);
-	return 0;
 }
 /**	
 args: 2 arrays of char pointers, sizes of arrays
@@ -143,12 +142,13 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 		int * retval;
 		for(t = 0; t < NUM_THREADS; t++)
 		{
+			printf("-bj-");
 			rc = pthread_join(threads[t],(void**)&retval);
 			if(rc){
 				printf("ERROR; return code from pthread_join() is %d\n", rc);
 				exit(-1);
 			}
-			
+			printf("-aj-");
 			for(int w = 0; w < max*min; w++)
 				distance[w] += retval[w];
 
