@@ -18,11 +18,11 @@ int main(int argc, char **argv)
 	NUM_THREADS = atoi(argv[4]);
 
 	//initalizing rand()
-	srand(time(NULL)+atoi(argv[5])+3);
+	srand(time(NULL)+3);
 
 	
-	char ** arr1 = (char**)malloc(m*sizeof(char*));
-	char ** arr2 = (char**)malloc(n*sizeof(char*));
+	char ** arr1 = (char**)malloc(m*sizeof(*arr1));
+	char ** arr2 = (char**)malloc(n*sizeof(*arr2));
 
 	int i,j;
 
@@ -60,8 +60,19 @@ int main(int argc, char **argv)
 	 
 	printf("hamming: %lld\n", dist);
 	
+	//Memory freeing
+	for(j = 0; j < m; j++){
+		free(arr1[j]);
+		arr1[j]=NULL;
+	}	
 
-
+	for(j = 0; j < n; j++){
+		free(arr2[j]);
+		arr2[j]=NULL;
+	}
+	free(arr1);
+	free(arr2);	
+	free(distance);
 
 	return 0;
 }
@@ -79,7 +90,8 @@ int * hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	int offset;
  	
 	int *distance=(int*)malloc(m*n*sizeof(int));
-	
+	for(int g=0;g<m*n;g++)distance[g]=0;
+
  	omp_set_num_threads(NUM_THREADS);
 
  	//Setting the correct array limits

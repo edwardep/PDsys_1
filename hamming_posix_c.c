@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	NUM_THREADS = atoi(argv[4]);
 
 	//initalizing rand()
-	srand(time(NULL)+atoi(argv[5])+7);
+	srand(time(NULL)+7);
 
 	char ** arr1 = (char**)malloc(m*sizeof(char*));
 	char ** arr2 = (char**)malloc(n*sizeof(char*));
@@ -73,8 +73,21 @@ int main(int argc, char **argv)
 	 
 	printf("hamming: %lld\n", dist);
 
+	//Memory freeing
+	for(j = 0; j < m; j++){
+		free(arr1[j]);
+		arr1[j]=NULL;
+	}	
+
+	for(j = 0; j < n; j++){
+		free(arr2[j]);
+		arr2[j]=NULL;
+	}
+	free(arr1);
+	free(arr2);	
+	free(distance);
+	
 	pthread_exit(NULL);
-	return 0;
 }
 /**	
 args: 2 arrays of char pointers, sizes of arrays
@@ -89,6 +102,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 
 
  	int * distance=(int*)malloc(m*n*sizeof(int));
+ 	for(int g=0;g<m*n;g++)distance[g]=0;
 
  	//Setting the correct array limits
  	if(m < n)
@@ -133,11 +147,11 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 				exit(-1);
 			}	
 		}	
-		int * retval;
 		//For each thread:
 		//	  call pthread_join(thread_id,return_value)
 		//	  add partial count to distance array
 		//	  free memory
+		int * retval;
 		for(t = 0; t < NUM_THREADS; t++)
 		{
 			rc = pthread_join(threads[t],(void**)&retval);
@@ -162,9 +176,6 @@ void* parallel_compare(void *thread_args)
 {
 	//Declaring local struct and retrieving arguments
 	struct args * data;
-	data = (struct args*)malloc(sizeof(struct args));
-
-
 	data = (struct args*)thread_args;
 	char ** a1 = data->array1;
 	char ** a2 = data->array2;
@@ -222,7 +233,6 @@ void* parallel_compare(void *thread_args)
 	int *answer = (int*)malloc(min*max*sizeof(int));
 	answer = distance;
 	pthread_exit(answer);
-	return 0;
 }
 
 

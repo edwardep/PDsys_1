@@ -1,18 +1,29 @@
 all:
 	@echo "\nCompiling files, please wait..."
 	@echo "________________________"
-	@$(MAKE) hamm_seq hamm_omp_a hamm_omp_b hamm_omp_c hamm_pt_b hamm_pt_c
+	@$(MAKE) hamm_seq hamm_omp_a hamm_omp_b hamm_omp_c hamm_pt_a hamm_pt_b hamm_pt_c
 	@echo "________________________"
 	@echo "\nExecuting all cases..."
-	@./hamm_seq $(M) $(N) $(L) $(S)
-	@./hamm_omp_a $(M) $(N) $(L) $(T) $(S)
-	@./hamm_omp_b $(M) $(N) $(L) $(T) $(S)
-	@./hamm_omp_c $(M) $(N) $(L) $(T) $(S)
-	@./hamm_pt_a $(M) $(N) $(L) $(T) $(S)
-	@./hamm_pt_b $(M) $(N) $(L) $(T) $(S)
-	@./hamm_pt_c $(M) $(N) $(L) $(T) $(S)
+	@./hamm_seq $(M) $(N) $(L)
+	@./hamm_omp_a $(M) $(N) $(L) $(T)
+	@./hamm_omp_b $(M) $(N) $(L) $(T)
+	@./hamm_omp_c $(M) $(N) $(L) $(T)
+	@./hamm_pt_a $(M) $(N) $(L) $(T)
+	@./hamm_pt_b $(M) $(N) $(L) $(T)
+	@./hamm_pt_c $(M) $(N) $(L) $(T)
 
+omp:
+	@$(MAKE) hamm_omp_a hamm_omp_b hamm_omp_c
+	@./hamm_omp_a $(M) $(N) $(L) $(T)
+	@./hamm_omp_b $(M) $(N) $(L) $(T)
+	@./hamm_omp_c $(M) $(N) $(L) $(T)
 
+posix:
+	@$(MAKE) hamm_pt_a hamm_pt_b hamm_pt_c
+	@./hamm_pt_a $(M) $(N) $(L) $(T)
+	@./hamm_pt_b $(M) $(N) $(L) $(T)
+	@./hamm_pt_c $(M) $(N) $(L) $(T)
+		
 hamm_seq : hamming.o
 	@gcc -o hamm_seq hamming.c
 

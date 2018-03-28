@@ -9,13 +9,18 @@ double gettime(void);
 
 int main(int argc, char **argv)
 {
+	if(argc < 4)
+	{
+		fprintf(stderr, "\n~Arguments missing!!\nTry 'make M=100 N=100 L=100 T=4'\n\n");
+		exit(-1);
+	}
 
 	int m = atoi(argv[1]);
 	int n = atoi(argv[2]);
 	int l = atoi(argv[3]);
 
 	//initalizing rand()
-	srand(time(NULL)*atoi(argv[4])+1);
+	srand(time(NULL)+1);
 
 
 	char ** arr1 = (char**)malloc(m*sizeof(*arr1));
@@ -86,7 +91,7 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
  	int small_index = 0;
 
  	int * distance = (int*)malloc(m*n*sizeof(int));
-
+ 	for(int g=0;g<m*n;g++)distance[g]=0;
 
  	//Setting the correct array limits
  	if(m < n)

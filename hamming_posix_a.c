@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	NUM_THREADS = atoi(argv[4]);
 
 	//initalizing rand()
-	srand(time(NULL)+atoi(argv[5])+5);
+	srand(time(NULL)+5);
 
 	char ** arr1 = (char**)malloc(m*sizeof(*arr1));
 	char ** arr2 = (char**)malloc(n*sizeof(*arr2));
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 	long long dist = 0;
 	for(int h = 0; h<m*n;h++)
 	{
-		printf("dist:%d\n",distance[h]);
+		//printf("dist:%d\n",distance[h]);
 		dist += distance[h];
 	}
 	 
@@ -86,7 +86,6 @@ int main(int argc, char **argv)
 	free(arr1);
 	free(arr2);	
 	free(distance);
-	printf("main thread exit");
 	pthread_exit(NULL);
 }
 /**	
@@ -157,28 +156,22 @@ int* hamming_distance(char ** a1,char ** a2, int m, int n, int l)
 			//	  call pthread_join(thread_id,return_value)
 			//	  add partial count to distance array
 			//	  free memory
-			
+			int * retval;
 			for(t = 0; t < NUM_THREADS; t++)
 			{	
-				int * retval;
-				//printf("in loop[%d][%d], waiting for T%d\n",i,j,t);
 				rc = pthread_join(threads[t],(void**)&retval);
 				if(rc){
 					printf("ERROR; return code from pthread_join() is %d\n", rc);
 					exit(-1);
 				}
-				//printf("after T%d\n",t);
 				distance[offset] += *retval;
 				free(retval);
-				//retval = NULL;
 			}
 			free(args_array);
 			pthread_mutex_destroy(&reduction_mx);
 		//PARALLEL SECTION ends
 		}
 	}
-
-	//printf("!!!exit hamming!!!!");
 	return distance;
 }
 
@@ -237,7 +230,6 @@ void* parallel_compare(void *thread_args)
 	//passing result to pthread_exit()
 	int *answer = (int*)malloc(sizeof(*answer));
 	*answer = distance;
-	//printf("%d\n", );
 	pthread_exit(answer);
 }
 double gettime(void)
